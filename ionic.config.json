@@ -1,0 +1,7 @@
+{
+  "name": "quitoalerta",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
