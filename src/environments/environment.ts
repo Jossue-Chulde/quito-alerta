@@ -8,8 +8,8 @@ export const environment = {
   },
   // Cloudinary
   cloudinary: {
-    cloudName: 'difyyken',
-    uploadPreset: 'quitoalerta_incidencias',
+    cloudName: 'dilfypkan', // Debe ser tu Cloud Name real (el que aparece en el Dashboard)
+    uploadPreset: 'quitoalerta_incidencias', // Debe ser exactamente el nombre del preset
     folder: 'quitoalerta/'
   },
   // Open-Meteo

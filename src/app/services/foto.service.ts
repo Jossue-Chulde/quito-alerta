@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Cloudinary } from '@capawesome/capacitor-cloudinary';
+import { Cloudinary, ResourceType } from '@capawesome/capacitor-cloudinary';
+import { Capacitor } from '@capacitor/core';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -11,9 +12,6 @@ export class FotoService {
 
   constructor() {}
 
-  /**
-   * Inicializa Cloudinary con el Cloud Name definido en environment.
-   */
   private async initCloudinary() {
     if (!this.cloudinaryInitialized) {
       await Cloudinary.initialize({ cloudName: environment.cloudinary.cloudName });
@@ -21,10 +19,7 @@ export class FotoService {
     }
   }
 
-  /**
-   * R6: Captura una foto usando la cámara nativa.
-   */
-  async capturarFoto(): Promise<string> {
+  async capturarFoto(): Promise<{ path?: string; webPath?: string; blob?: Blob }> {
     try {
       const photo = await Camera.getPhoto({
         quality: 80,
@@ -34,46 +29,62 @@ export class FotoService {
         correctOrientation: true
       });
 
-      if (!photo.path) {
-        throw new Error('No se obtuvo la ruta de la imagen.');
+      // En la web, el plugin devuelve webPath. En Android, devuelve path.
+      if (Capacitor.getPlatform() === 'web') {
+        if (!photo.webPath) {
+          throw new Error('No se obtuvo la ruta web de la imagen.');
+        }
+        // Convertimos la URL webPath a un Blob para subirlo a Cloudinary
+        const response = await fetch(photo.webPath);
+        const blob = await response.blob();
+        return { webPath: photo.webPath, blob };
+      } else {
+        if (!photo.path) {
+          throw new Error('No se obtuvo la ruta de la imagen.');
+        }
+        return { path: photo.path };
       }
-      return photo.path;
     } catch (error) {
       console.error('Error al capturar foto:', error);
-      throw new Error('No se pudo capturar la fotografía. Verifica los permisos de la cámara.');
+      throw new Error('No se pudo capturar la fotografía. Verifica los permisos.');
     }
   }
 
-  /**
-   * R6: Sube la foto capturada a Cloudinary y devuelve la URL pública.
-   */
-  async subirFoto(path: string): Promise<string> {
+  async subirFoto(data: { path?: string; blob?: Blob }): Promise<string> {
     try {
       await this.initCloudinary();
-      
-      // En Android, Capacitor devuelve la ruta con "file://". 
-      // El plugin de Cloudinary necesita la ruta limpia para poder leer el archivo temporal.
-      let cleanPath = path;
-      if (cleanPath.startsWith('file://')) {
-        cleanPath = cleanPath.substring(7);
+
+      if (Capacitor.getPlatform() === 'web') {
+        // En la web, subimos el Blob
+        const result = await Cloudinary.uploadResource({
+          blob: data.blob!,
+          resourceType: ResourceType.Image,
+          uploadPreset: environment.cloudinary.uploadPreset,
+          publicId: `incidencia_${Date.now()}`
+        });
+        if (!result || !result.secureUrl) {
+          throw new Error('Cloudinary no devolvió una URL válida.');
+        }
+        return result.secureUrl;
+      } else {
+        // En Android, limpiamos la ruta y subimos el archivo
+        let cleanPath = data.path!;
+        if (cleanPath.startsWith('file://')) {
+          cleanPath = cleanPath.substring(7);
+        }
+        const result = await Cloudinary.uploadResource({
+          path: cleanPath,
+          resourceType: ResourceType.Image,
+          uploadPreset: environment.cloudinary.uploadPreset,
+          publicId: `incidencia_${Date.now()}`
+        });
+        if (!result || !result.secureUrl) {
+          throw new Error('Cloudinary no devolvió una URL válida.');
+        }
+        return result.secureUrl;
       }
-
-      const result = await Cloudinary.uploadResource({
-        path: cleanPath, 
-        // Forzamos el tipo para evitar problemas con los tipos estrictos de TypeScript
-        resourceType: 'Image' as any, 
-        uploadPreset: environment.cloudinary.uploadPreset,
-        publicId: `incidencia_${Date.now()}`
-      });
-
-      if (!result || !result.secureUrl) {
-        throw new Error('Cloudinary no devolvió una URL válida.');
-      }
-
-      return result.secureUrl;
     } catch (error: any) {
-      // ESTO ES LO QUE NOS DIRÁ EL ERROR REAL EN LOGCAT SI ALGO FALLA
-      console.error('Error detallado de Cloudinary:', JSON.stringify(error)); 
+      console.error('Error detallado de Cloudinary:', JSON.stringify(error));
       throw new Error('No se pudo subir la imagen. Intenta de nuevo.');
     }
   }

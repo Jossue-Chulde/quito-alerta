@@ -114,11 +114,22 @@ export class RegistroPage implements OnInit {
 
   async tomarFoto() {
     try {
-      const path = await this.fotoService.capturarFoto();
-      this.fotoLocalPath = path;
+      // 1. Capturamos la foto (devuelve un objeto con path o blob)
+      const fotoData = await this.fotoService.capturarFoto();
+      
+      // 2. Guardamos la ruta web para mostrarla en el HTML (si estamos en web)
+      if (fotoData.webPath) {
+        this.fotoLocalPath = fotoData.webPath; // Para mostrar la previsualización
+      } else if (fotoData.path) {
+        this.fotoLocalPath = fotoData.path;
+      }
+
       this.subiendoFoto = true;
-      const url = await this.fotoService.subirFoto(path);
+      
+      // 3. Subimos a Cloudinary pasando el objeto completo
+      const url = await this.fotoService.subirFoto(fotoData);
       this.fotoUrlCloudinary = url;
+      
       this.formulario.updateValueAndValidity();
       this.mostrarToast('Foto subida correctamente');
     } catch (error: any) {
