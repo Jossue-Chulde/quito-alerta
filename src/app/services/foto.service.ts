@@ -44,7 +44,8 @@ export class FotoService {
       
       const result = await Cloudinary.uploadResource({
         path: path,
-        resourceType: ResourceType.Image, // <-- Corregido aquí (Mayúscula)
+        // Corregido con mayúscula según tu definición de tipos
+        resourceType: ResourceType.Image, 
         uploadPreset: environment.cloudinary.uploadPreset,
         publicId: `incidencia_${Date.now()}`
       });
@@ -55,7 +56,8 @@ export class FotoService {
 
       return result.secureUrl;
     } catch (error) {
-      console.error('Error al subir foto a Cloudinary:', error);
+      // Este log te dirá exactamente qué está fallando en la consola de Android Studio
+      console.error('Error detallado de Cloudinary:', error); 
       throw new Error('No se pudo subir la imagen. Intenta de nuevo.');
     }
   }
