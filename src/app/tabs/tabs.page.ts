@@ -12,7 +12,6 @@ import { homeOutline, listOutline, bookmarkOutline, addCircleOutline } from 'ion
 })
 export class TabsPage {
   constructor() {
-    // Registramos los iconos que usaremos en la barra
     addIcons({ homeOutline, listOutline, bookmarkOutline, addCircleOutline });
   }
 }

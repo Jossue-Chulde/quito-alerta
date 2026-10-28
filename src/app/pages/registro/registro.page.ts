@@ -38,7 +38,7 @@ export class RegistroPage implements OnInit {
   private climaService = inject(ClimaService);
   private fotoService = inject(FotoService);
   private borradorService = inject(BorradorService);
-  private resumenService = inject(ResumenService); // Inyectado para actualizar los contadores
+  private resumenService = inject(ResumenService);
   private alertCtrl = inject(AlertController);
   private toastCtrl = inject(ToastController);
 
@@ -116,12 +116,10 @@ export class RegistroPage implements OnInit {
     try {
       const fotoData = await this.fotoService.capturarFoto();
       
-      // Asignamos la ruta para la previsualización (webPath en web, path en Android)
       this.fotoLocalPath = fotoData.webPath || fotoData.path || null;
 
       this.subiendoFoto = true;
       
-      // Subimos la foto (el servicio decide cómo hacerlo según la plataforma)
       const url = await this.fotoService.subirFoto(fotoData);
       this.fotoUrlCloudinary = url;
       
@@ -195,7 +193,6 @@ export class RegistroPage implements OnInit {
 
     this.incidenciaService.crear(nuevaIncidencia).subscribe({
       next: async () => {
-        // Actualizamos el endpoint de resumen
         this.resumenService.obtenerResumen().subscribe(res => {
           if (res && res.id) {
             const actualizado = {

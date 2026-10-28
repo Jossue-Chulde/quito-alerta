@@ -19,15 +19,12 @@ export class IncidenciaService {
 
     return this.http.get<any>(this.baseUrl, { params }).pipe(
       map(res => {
-        // Si la respuesta es un arreglo, lo devolvemos
         if (Array.isArray(res)) {
           return res;
         }
-        // Si por alguna razón viene envuelto (ej. { data: [...] }), lo extraemos
         if (res && Array.isArray(res.data)) {
           return res.data;
         }
-        // Si no es nada de eso, devolvemos vacío
         return [];
       })
     );

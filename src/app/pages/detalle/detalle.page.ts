@@ -59,7 +59,6 @@ export class DetallePage implements OnInit {
   private cargarIncidencia(id: string) {
     this.cargando = true;
     
-    // Si el ID es un código (ej. INC-2026-0001), usamos buscarPorCodigo, si no, obtenerPorId
     const peticion = id.startsWith('INC-') 
       ? this.incidenciaService.buscarPorCodigo(id) 
       : this.incidenciaService.obtenerPorId(id);
@@ -67,10 +66,9 @@ export class DetallePage implements OnInit {
     peticion.subscribe({
       next: async (data) => {
         this.incidencia = data;
-        // Verificamos si está en seguimiento local
         this.enSeguimiento = await this.seguimientoService.estaEnSeguimiento(data.codigo);
         this.cargando = false;
-        this.cdr.detectChanges(); // Forzar actualización visual
+        this.cdr.detectChanges(); 
       },
       error: (err) => {
         console.error('Error al cargar detalle:', err);
@@ -93,7 +91,7 @@ export class DetallePage implements OnInit {
       this.enSeguimiento = true;
       this.mostrarToast('Añadido a seguimiento');
     }
-    this.cdr.detectChanges(); // Actualizar el icono del bookmark
+    this.cdr.detectChanges(); 
   }
 
   async cambiarEstado(nuevoEstado: EstadoIncidencia) {
@@ -140,7 +138,6 @@ export class DetallePage implements OnInit {
       next: (data) => {
         this.incidencia = data;
         
-        // Actualizamos los contadores en el resumen
         this.resumenService.obtenerResumen().subscribe(res => {
           if (res && res.id) {
             const act = { ...res };

@@ -17,13 +17,11 @@
     <ion-button expand="block" (click)="cargarPrimeraPagina()">Reintentar</ion-button>
   </div>
 
-  <!-- Usamos ngIf clásico para el estado vacío -->
   <div *ngIf="!cargando && !errorCarga && incidencias.length === 0" class="ion-text-center ion-padding" style="margin-top: 20vh;">
     <ion-icon name="alert-circle-outline" color="medium" size="large"></ion-icon>
     <p>No hay incidencias registradas aún.</p>
   </div>
 
-  <!-- Usamos ngFor clásico -->
   <ion-list lines="none" class="ion-padding" *ngIf="incidencias.length > 0">
     <ion-item *ngFor="let item of incidencias" button (click)="verDetalle(item)" class="incidencia-card ion-margin-bottom">
       

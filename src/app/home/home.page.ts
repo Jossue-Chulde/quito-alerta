@@ -56,7 +56,6 @@ export class HomePage implements ViewWillEnter {
       },
       error: (err) => {
         console.error('Error al cargar resumen:', err);
-        // Si falla, mostramos ceros para que no se rompa la pantalla
         this.resumen = { total: 0, pendientes: 0, enProceso: 0, resueltas: 0, alta: 0, media: 0, baja: 0 };
         this.errorCarga = true;
         this.cargando = false;

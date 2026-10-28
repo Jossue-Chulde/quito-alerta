@@ -16,7 +16,7 @@ export class ClimaService {
     const url = `${this.baseUrl}?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,weather_code&hourly=precipitation&past_hours=1&forecast_hours=1&timezone=auto`;
 
     return this.http.get<any>(url).pipe(
-      map((res): ResultadoClima => { // <-- Forzamos el tipo de retorno aquí
+      map((res): ResultadoClima => {
         const temp = res.current?.temperature_2m ?? 0;
         const precipActual = res.current?.precipitation ?? 0;
         
@@ -35,7 +35,6 @@ export class ClimaService {
           advertenciaLluvia: precipAcumulada > 5
         };
 
-        // Usamos 'as const' o forzamos el literal true
         return { ok: true, data: clima } as ResultadoClima; 
       }),
       catchError(err => {

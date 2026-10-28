@@ -8,6 +8,6 @@ export interface BorradorIncidencia {
   prioridad: PrioridadIncidencia;
   latitud: number | null;
   longitud: number | null;
-  fotoUrl: string | null; // Se guarda si ya se subió a Cloudinary
-  guardadoEn: string;     // ISO 8601, para mostrar "borrador de hace X"
+  fotoUrl: string | null; 
+  guardadoEn: string;
 }

@@ -55,8 +55,6 @@ export class ListaPage implements ViewWillEnter {
         this.incidencias = data;
         if (this.incidencias.length < 10) this.hasMore = false;
         this.cargando = false;
-        
-        // FORZAMOS A ANGULAR A ACTUALIZAR LA PANTALLA
         this.cdr.detectChanges(); 
       },
       error: (err) => {
@@ -90,7 +88,6 @@ export class ListaPage implements ViewWillEnter {
   }
 
   verDetalle(incidencia: Incidencia) {
-    // Si no hay ID, usamos el código como respaldo
     const idParaNavegar = incidencia.id || incidencia.codigo;
     if (idParaNavegar) {
       this.router.navigate(['/detalle', idParaNavegar]);

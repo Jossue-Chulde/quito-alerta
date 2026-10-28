@@ -33,7 +33,6 @@
       </ion-item>
     </ion-list>
 
-    <!-- Bloque de Foto -->
     <ion-card>
       <ion-card-header>
         <ion-card-title>Evidencia Fotográfica</ion-card-title>
@@ -57,7 +56,6 @@
       </ion-card-content>
     </ion-card>
 
-    <!-- Bloque de Ubicación -->
     <ion-card>
       <ion-card-header>
         <ion-card-title>Ubicación</ion-card-title>
@@ -83,7 +81,6 @@
       </ion-card-content>
     </ion-card>
 
-    <!-- Bloque de Clima -->
     @if (cargandoClima || climaActual || errorClima) {
       <ion-card>
         <ion-card-header>
@@ -113,7 +110,6 @@
       </ion-card>
     }
 
-    <!-- Botón Guardar -->
     <ion-button expand="block" type="submit" color="primary" class="ion-margin-top" 
                 [disabled]="subiendoFoto">
       <ion-icon slot="start" name="save-outline"></ion-icon>

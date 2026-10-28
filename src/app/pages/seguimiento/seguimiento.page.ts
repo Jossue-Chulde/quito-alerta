@@ -80,11 +80,10 @@ export class SeguimientoPage implements ViewWillEnter {
     event.stopPropagation();
     await this.seguimientoService.desmarcar(incidencia.codigo);
     this.incidencias = this.incidencias.filter(i => i.codigo !== incidencia.codigo);
-    this.cdr.detectChanges(); // Forzar a que desaparezca de la vista
+    this.cdr.detectChanges();
   }
 
   verDetalle(incidencia: Incidencia) {
-    // Usamos el código porque los datos de prueba no tienen id
     const idParaNavegar = incidencia.id || incidencia.codigo;
     this.router.navigate(['/detalle', idParaNavegar]);
   }

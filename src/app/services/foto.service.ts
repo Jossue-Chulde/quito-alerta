@@ -31,7 +31,6 @@ export class FotoService {
 
       if (Capacitor.getPlatform() === 'web') {
         if (!photo.webPath) throw new Error('No se obtuvo la ruta web.');
-        // Convertimos a Blob para la subida en web
         const response = await fetch(photo.webPath);
         const blob = await response.blob();
         return { webPath: photo.webPath, blob };
@@ -53,7 +52,6 @@ export class FotoService {
     }
   }
 
-  // MÉTODO PARA WEB: Usa fetch con FormData (Evita el 401 del plugin)
   private async subirFotoWeb(blob: Blob): Promise<string> {
     const formData = new FormData();
     formData.append('file', blob);
@@ -81,7 +79,6 @@ export class FotoService {
     }
   }
 
-  // MÉTODO PARA ANDROID: Usa el plugin nativo con path
   private async subirFotoAndroid(path: string): Promise<string> {
     try {
       await this.initCloudinary();

@@ -5,7 +5,6 @@
     </ion-buttons>
     <ion-title>Detalle</ion-title>
     
-    <!-- ESTE ES EL BOTÓN DEL MARCADOR -->
     <ion-buttons slot="end">
       @if (incidencia) {
         <ion-button (click)="toggleSeguimiento()">
@@ -33,7 +32,6 @@
   }
 
   @if (!cargando && incidencia) {
-    <!-- Encabezado -->
     <div class="ion-text-center ion-margin-bottom">
       <h2 style="font-weight: bold; margin-bottom: 4px;">{{ incidencia.tipo | titlecase }}</h2>
       <p style="color: var(--ion-color-medium); margin-top: 0;">{{ incidencia.codigo }}</p>
@@ -44,14 +42,12 @@
       </div>
     </div>
 
-    <!-- Foto -->
     @if (incidencia.fotoUrl) {
       <ion-card>
         <img [src]="incidencia.fotoUrl" alt="Evidencia fotográfica" style="width: 100%; max-height: 300px; object-fit: cover;">
       </ion-card>
     }
 
-    <!-- Datos -->
     <ion-card>
       <ion-card-content>
         <ion-list lines="full">
@@ -101,7 +97,6 @@
       </ion-card-content>
     </ion-card>
 
-    <!-- Acciones de Estado (R9) -->
     @if (incidencia.estado !== 'resuelta') {
       <ion-card>
         <ion-card-header>
