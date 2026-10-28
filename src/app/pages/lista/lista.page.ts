@@ -55,16 +55,12 @@ export class ListaPage implements ViewWillEnter {
 
     this.incidenciaService.listar(this.page).subscribe({
       next: (res) => {
+        // Extraemos el cuerpo de la respuesta
         this.incidencias = res.body || [];
         
-        // Verificamos si hay más páginas. MockAPI envía X-Total-Count
-        const totalItems = res.headers.get('X-Total-Count');
-        if (totalItems) {
-          const total = parseInt(totalItems, 10);
-          this.hasMore = this.incidencias.length < total;
-        } else {
-          // Respaldo: si trajo menos de 10, ya no hay más
-          this.hasMore = this.incidencias.length === 10;
+        // Si trajo menos elementos de los que pedimos (10), es porque ya no hay más páginas
+        if (this.incidencias.length < 10) {
+          this.hasMore = false;
         }
         
         this.cargando = false;
@@ -90,7 +86,6 @@ export class ListaPage implements ViewWillEnter {
         const nuevas = res.body || [];
         this.incidencias = [...this.incidencias, ...nuevas];
         
-        // Si trajo menos de 10, es la última página
         if (nuevas.length < 10) {
           this.hasMore = false;
         }
@@ -100,7 +95,7 @@ export class ListaPage implements ViewWillEnter {
       error: (err) => {
         console.error('Error al cargar más:', err);
         event.target.complete();
-        this.hasMore = false; // Detenemos el scroll para evitar spam de errores
+        this.hasMore = false; 
       }
     });
   }
