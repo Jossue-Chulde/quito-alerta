@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
   // MockAPI
-  mockApiUrl: 'https://6ae029e08e42963c8d5eff79.mockapi.io/api',
+  mockApiUrl: 'https://6ae1d8f3bbb5412922993ed3.mockapi.io',
   endpoints: {
     incidencias: '/incidencias',
     resumen: '/resumen'

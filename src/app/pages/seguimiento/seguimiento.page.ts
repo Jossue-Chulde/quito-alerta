@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonList, 
   IonItem, IonLabel, IonThumbnail, IonBadge, IonSpinner, 
-  IonButton, IonIcon, IonButtons, IonBackButton, ViewWillEnter
+  IonButton, IonIcon, ViewWillEnter 
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { bookmarkOutline, chevronForwardOutline, trashOutline, alertCircleOutline } from 'ionicons/icons';
@@ -23,7 +23,7 @@ import { Incidencia } from '../../models/incidencia.model';
   imports: [
     CommonModule, IonHeader, IonToolbar, IonTitle, IonContent, IonList, 
     IonItem, IonLabel, IonThumbnail, IonBadge, IonSpinner, 
-    IonButton, IonIcon, IonButtons, IonBackButton
+    IonButton, IonIcon
   ]
 })
 export class SeguimientoPage implements ViewWillEnter {

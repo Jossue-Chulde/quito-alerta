@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonButton, 
   IonIcon, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
-  IonList, IonItem, IonLabel, IonBadge, IonSpinner, IonText,
+  IonList, IonItem, IonLabel, IonBadge, IonSpinner, 
   IonBackButton, IonButtons, AlertController, ToastController
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
@@ -22,7 +22,7 @@ import { Incidencia, EstadoIncidencia } from '../../models/incidencia.model';
   imports: [
     CommonModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, 
     IonIcon, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
-    IonList, IonItem, IonLabel, IonBadge, IonSpinner, IonText,
+    IonList, IonItem, IonLabel, IonBadge, IonSpinner,
     IonBackButton, IonButtons
   ]
 })

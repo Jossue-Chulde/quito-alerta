@@ -182,17 +182,11 @@ export class RegistroPage implements OnInit {
   }
 
   async guardar() {
-    // Si el formulario es inválido o se está subiendo la foto, bloqueamos y avisamos
     if (this.formulario.invalid || this.subiendoFoto) {
       this.formulario.markAllAsTouched();
-      
-      if (this.formulario.errors?.['fotoRequerida']) {
-        this.mostrarToast('La fotografía es obligatoria para prioridad alta.');
-      } else if (this.formulario.errors?.['ubicacionRequerida']) {
-        this.mostrarToast('Las coordenadas son obligatorias para un bache.');
-      } else {
-        this.mostrarToast('Por favor, llena todos los campos obligatorios.');
-      }
+      if (this.formulario.errors?.['fotoRequerida']) this.mostrarToast('La fotografía es obligatoria para prioridad alta.');
+      else if (this.formulario.errors?.['ubicacionRequerida']) this.mostrarToast('Las coordenadas son obligatorias para un bache.');
+      else this.mostrarToast('Por favor, llena todos los campos obligatorios.');
       return;
     }
 
@@ -200,20 +194,26 @@ export class RegistroPage implements OnInit {
     const correlativo = Math.floor(Math.random() * 9000) + 1000;
     const codigo = `INC-${anio}-${correlativo}`;
 
-    const nuevaIncidencia: Partial<Incidencia> = {
+    const latVal = this.formulario.value.latitud;
+    const lonVal = this.formulario.value.longitud;
+
+    // Construimos el objeto asegurando los tipos de datos de tu nuevo esquema
+    const nuevaIncidencia: any = {
       codigo: codigo,
       tipo: this.formulario.value.tipo,
       descripcion: this.formulario.value.descripcion,
       direccion: this.formulario.value.direccion,
       sector: this.formulario.value.sector,
       fecha: new Date().toISOString(),
-      estado: 'pendiente',
+      estado: "pendiente",
       prioridad: this.formulario.value.prioridad,
-      fotoUrl: this.fotoUrlCloudinary,
-      latitud: this.formulario.value.latitud || null,
-      longitud: this.formulario.value.longitud || null,
-      observacionResolucion: null
+      fotoUrl: this.fotoUrlCloudinary ? this.fotoUrlCloudinary : "",
+      latitud: latVal ? Number(latVal) : 0,
+      longitud: lonVal ? Number(lonVal) : 0,
+      observacionResolucion: "" 
     };
+
+    console.log('Enviando a MockAPI:', JSON.stringify(nuevaIncidencia));
 
     this.incidenciaService.crear(nuevaIncidencia).subscribe({
       next: async () => {
@@ -226,8 +226,9 @@ export class RegistroPage implements OnInit {
         this.router.navigate(['/tabs/incidencias']);
       },
       error: (err) => {
-        console.error('Error detallado de MockAPI:', err);
-        this.mostrarToast('Error al guardar. Revisa la consola para más detalles.');
+        console.error('Error detallado de MockAPI -> Status:', err.status);
+        console.error('Error detallado de MockAPI -> Respuesta:', JSON.stringify(err.error));
+        this.mostrarToast('Error al guardar. Revisa la consola.');
       }
     });
   }
