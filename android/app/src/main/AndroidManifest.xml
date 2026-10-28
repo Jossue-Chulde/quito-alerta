@@ -1,5 +1,6 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
     <!-- Permisos de Cámara (R6) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -9,10 +10,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
-    <!-- Permisos de Internet (MockAPI y Cloudinary) -->
+    <!-- Permisos de Internet y Descargas -->
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <!-- Permiso requerido por Cloudinary -->
     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
 
     <application
@@ -22,6 +21,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <!-- Configuración para el plugin de la Cámara -->
+        <meta-data android:name="io.capacitor.camera.allow_background" android:value="true" />
+        <meta-data android:name="io.capacitor.camera.permissions.CAMERA" android:value="true" />
+
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
@@ -29,27 +33,31 @@
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- RECEPTOR DE CLOUDINARY (Debe ir dentro de <application>, no de <activity>) -->
-        <receiver
-            android:name="io.capawesome.capacitorjs.plugins.cloudinary.DownloadBroadcastReceiver"
+        <!-- RECEPTOR DE CLOUDINARY (Debe ir aquí, dentro de application) -->
+        <receiver 
+            android:name="io.capawesome.capacitorjs.plugins.cloudinary.DownloadBroadcastReceiver" 
             android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE"/>
             </intent-filter>
         </receiver>
 
+        <!-- Proveedor de archivos (necesario para que la cámara guarde fotos) -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
-            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
         </provider>
     </application>
 </manifest>

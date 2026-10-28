@@ -69,29 +69,24 @@ export class RegistroPage implements OnInit {
       prioridad: ['media', Validators.required],
       latitud: [null],
       longitud: [null]
-    }, { validators: this.validarReglasCruzadas });
+    }, { validators: this.validarReglasCruzadas.bind(this) });
   }
 
-  // Validador personalizado para R5 y R7
   private validarReglasCruzadas(group: AbstractControl): ValidationErrors | null {
     const tipo = group.get('tipo')?.value;
     const prioridad = group.get('prioridad')?.value;
-    const foto = group.get('fotoUrl')?.value; // Lo manejamos manualmente
     const lat = group.get('latitud')?.value;
     const lng = group.get('longitud')?.value;
 
-    // R5: Prioridad alta exige foto
-    if (prioridad === 'alta' && !foto) {
+    if (prioridad === 'alta' && !this.fotoUrlCloudinary) {
       return { fotoRequerida: true };
     }
-    // R7: Bache exige coordenadas
     if (tipo === 'bache' && (!lat || !lng)) {
       return { ubicacionRequerida: true };
     }
     return null;
   }
 
-  // R8: Verificar si hay un borrador al entrar
   async verificarBorrador() {
     const borrador = await this.borradorService.obtenerBorrador();
     if (borrador) {
@@ -109,6 +104,7 @@ export class RegistroPage implements OnInit {
             handler: () => {
               this.formulario.patchValue(borrador);
               this.fotoUrlCloudinary = borrador.fotoUrl;
+              this.formulario.updateValueAndValidity();
               if (!this.fotoUrlCloudinary) {
                 this.mostrarToast('La fotografía anterior no se pudo recuperar. Debes tomar una nueva.');
               }
@@ -120,7 +116,6 @@ export class RegistroPage implements OnInit {
     }
   }
 
-  // R8: Guardar borrador cada vez que cambia el formulario
   private configurarAutoGuardado() {
     this.formulario.valueChanges.subscribe(val => {
       this.borradorService.guardarBorrador({
@@ -130,18 +125,15 @@ export class RegistroPage implements OnInit {
     });
   }
 
-  // R6: Capturar foto
   async tomarFoto() {
     try {
       const path = await this.fotoService.capturarFoto();
       this.fotoLocalPath = path;
       this.subiendoFoto = true;
       
-      // Subir a Cloudinary
       const url = await this.fotoService.subirFoto(path);
       this.fotoUrlCloudinary = url;
       
-      // Actualizamos el formulario para que el validador sepa que ya hay foto
       this.formulario.updateValueAndValidity();
       this.mostrarToast('Foto subida correctamente');
     } catch (error: any) {
@@ -151,7 +143,6 @@ export class RegistroPage implements OnInit {
     }
   }
 
-  // R7: Obtener GPS
   async obtenerUbicacion() {
     try {
       const coordinates = await Geolocation.getCurrentPosition();
@@ -167,7 +158,6 @@ export class RegistroPage implements OnInit {
     }
   }
 
-  // R4: Consultar clima
   async consultarClima(lat: number, lon: number) {
     this.cargandoClima = true;
     this.errorClima = null;
@@ -183,7 +173,6 @@ export class RegistroPage implements OnInit {
     });
   }
 
-  // R4: Si el inspector ingresa coordenadas manuales, consultamos el clima
   consultarClimaManual() {
     const lat = this.formulario.get('latitud')?.value;
     const lon = this.formulario.get('longitud')?.value;
@@ -192,22 +181,23 @@ export class RegistroPage implements OnInit {
     }
   }
 
-  // R5: Guardar incidencia
   async guardar() {
+    // Si el formulario es inválido o se está subiendo la foto, bloqueamos y avisamos
     if (this.formulario.invalid || this.subiendoFoto) {
       this.formulario.markAllAsTouched();
+      
+      if (this.formulario.errors?.['fotoRequerida']) {
+        this.mostrarToast('La fotografía es obligatoria para prioridad alta.');
+      } else if (this.formulario.errors?.['ubicacionRequerida']) {
+        this.mostrarToast('Las coordenadas son obligatorias para un bache.');
+      } else {
+        this.mostrarToast('Por favor, llena todos los campos obligatorios.');
+      }
       return;
     }
 
-    // R5: Validación estricta de foto en cliente
-    if (this.formulario.value.prioridad === 'alta' && !this.fotoUrlCloudinary) {
-      this.mostrarToast('La fotografía es obligatoria para prioridad alta.');
-      return;
-    }
-
-    // Generar código (INC-AÑO-CORRELATIVO)
     const anio = new Date().getFullYear();
-    const correlativo = Math.floor(Math.random() * 9000) + 1000; // Temporal para pruebas
+    const correlativo = Math.floor(Math.random() * 9000) + 1000;
     const codigo = `INC-${anio}-${correlativo}`;
 
     const nuevaIncidencia: Partial<Incidencia> = {
@@ -220,12 +210,11 @@ export class RegistroPage implements OnInit {
       estado: 'pendiente',
       prioridad: this.formulario.value.prioridad,
       fotoUrl: this.fotoUrlCloudinary,
-      latitud: this.formulario.value.latitud,
-      longitud: this.formulario.value.longitud,
+      latitud: this.formulario.value.latitud || null,
+      longitud: this.formulario.value.longitud || null,
       observacionResolucion: null
     };
 
-    // Guardar en MockAPI
     this.incidenciaService.crear(nuevaIncidencia).subscribe({
       next: async () => {
         await this.borradorService.limpiarBorrador();
@@ -237,8 +226,8 @@ export class RegistroPage implements OnInit {
         this.router.navigate(['/tabs/incidencias']);
       },
       error: (err) => {
-        console.error(err);
-        this.mostrarToast('Error al guardar. Revisa tu conexión.');
+        console.error('Error detallado de MockAPI:', err);
+        this.mostrarToast('Error al guardar. Revisa la consola para más detalles.');
       }
     });
   }
