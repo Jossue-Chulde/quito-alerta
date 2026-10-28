@@ -8,10 +8,11 @@ import {
   IonBackButton, IonButtons, AlertController, ToastController
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { bookmarkOutline, bookmark, createOutline, alertCircleOutline } from 'ionicons/icons';
+import { bookmarkOutline, bookmark, createOutline, alertCircleOutline, checkmarkDoneOutline } from 'ionicons/icons';
 
 import { IncidenciaService } from '../../services/incidencia.service';
 import { SeguimientoService } from '../../services/seguimiento.service';
+import { ResumenService } from '../../services/resumen.service';
 import { Incidencia, EstadoIncidencia } from '../../models/incidencia.model';
 
 @Component({
@@ -31,6 +32,7 @@ export class DetallePage implements OnInit {
   private router = inject(Router);
   private incidenciaService = inject(IncidenciaService);
   private seguimientoService = inject(SeguimientoService);
+  private resumenService = inject(ResumenService);
   private alertCtrl = inject(AlertController);
   private toastCtrl = inject(ToastController);
 
@@ -40,17 +42,13 @@ export class DetallePage implements OnInit {
   enSeguimiento = false;
 
   constructor() {
-    addIcons({ bookmarkOutline, bookmark, createOutline, alertCircleOutline });
+    addIcons({ bookmarkOutline, bookmark, createOutline, alertCircleOutline, checkmarkDoneOutline });
   }
 
   async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.cargarIncidencia(id);
-    } else {
-      this.errorCarga = true;
-      this.cargando = false;
-    }
+    if (id) this.cargarIncidencia(id);
+    else { this.errorCarga = true; this.cargando = false; }
   }
 
   private cargarIncidencia(id: string) {
@@ -69,10 +67,8 @@ export class DetallePage implements OnInit {
     });
   }
 
-  // R1: Alternar seguimiento
   async toggleSeguimiento() {
     if (!this.incidencia) return;
-    
     if (this.enSeguimiento) {
       await this.seguimientoService.desmarcar(this.incidencia.codigo);
       this.enSeguimiento = false;
@@ -84,28 +80,18 @@ export class DetallePage implements OnInit {
     }
   }
 
-  // R9: Cambiar estado
   async cambiarEstado(nuevoEstado: EstadoIncidencia) {
     if (!this.incidencia) return;
-
-    // Validar regla de transición
     if (!this.incidenciaService.esTransicionValida(this.incidencia.estado, nuevoEstado)) {
       this.mostrarToast('Transición de estado no permitida.');
       return;
     }
 
-    // Si es resuelta, pedir observación obligatoria
     if (nuevoEstado === 'resuelta') {
       const alert = await this.alertCtrl.create({
         header: 'Resolver Incidencia',
         message: 'Ingresa una observación de al menos 10 caracteres.',
-        inputs: [
-          {
-            name: 'observacion',
-            type: 'textarea',
-            placeholder: 'Detalle de la resolución...'
-          }
-        ],
+        inputs: [{ name: 'observacion', type: 'textarea', placeholder: 'Detalle de la resolución...' }],
         buttons: [
           { text: 'Cancelar', role: 'cancel' },
           {
@@ -113,7 +99,7 @@ export class DetallePage implements OnInit {
             handler: (data) => {
               if (!data.observacion || data.observacion.trim().length < 10) {
                 this.mostrarToast('La observación debe tener al menos 10 caracteres.');
-                return false; // Evita que se cierre el alert
+                return false;
               }
               this.ejecutarCambioEstado(nuevoEstado, data.observacion.trim());
               return true;
@@ -123,27 +109,39 @@ export class DetallePage implements OnInit {
       });
       await alert.present();
     } else {
-      // Para 'en_proceso' no se pide observación
       this.ejecutarCambioEstado(nuevoEstado, null);
     }
   }
 
   private ejecutarCambioEstado(nuevoEstado: EstadoIncidencia, observacion: string | null) {
     if (!this.incidencia?.id) return;
+    const estadoAnterior = this.incidencia.estado;
 
     const cambios: Partial<Incidencia> = { estado: nuevoEstado };
-    if (observacion) {
-      cambios.observacionResolucion = observacion;
-    }
+    if (observacion) cambios.observacionResolucion = observacion;
 
     this.incidenciaService.actualizar(this.incidencia.id, cambios).subscribe({
       next: (data) => {
         this.incidencia = data;
+        
+        // Actualizamos el resumen
+        this.resumenService.obtenerResumen().subscribe(res => {
+          if (res && res.id) {
+            const act = { ...res };
+            if (estadoAnterior === 'pendiente') act.pendientes -= 1;
+            if (estadoAnterior === 'en_proceso') act.enProceso -= 1;
+            
+            if (nuevoEstado === 'en_proceso') act.enProceso += 1;
+            if (nuevoEstado === 'resuelta') act.resueltas += 1;
+
+            this.resumenService.actualizarResumen(res.id, act).subscribe();
+          }
+        });
         this.mostrarToast('Estado actualizado correctamente');
       },
       error: (err) => {
         console.error(err);
-        this.mostrarToast('Error al actualizar. Revisa tu conexión.');
+        this.mostrarToast('Error al actualizar.');
       }
     });
   }

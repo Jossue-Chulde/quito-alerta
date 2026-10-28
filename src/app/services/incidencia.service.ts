@@ -19,7 +19,17 @@ export class IncidenciaService {
       .set('sortBy', 'fecha')
       .set('order', 'desc');
 
-    return this.http.get<Incidencia[]>(this.baseUrl, { params, observe: 'response' });
+    return this.http.get<Incidencia[]>(this.baseUrl, { params, observe: 'response' }).pipe(
+      map((res: HttpResponse<Incidencia[]>) => {
+        // Filtro de seguridad: solo dejamos pasar objetos que tengan 'codigo' y 'tipo'
+        if (res.body) {
+          const soloIncidencias = res.body.filter((item: any) => item.codigo && item.tipo);
+          // Clonamos la respuesta pero con los datos filtrados
+          return res.clone({ body: soloIncidencias });
+        }
+        return res;
+      })
+    );
   }
 
   obtenerPorId(id: string): Observable<Incidencia> {

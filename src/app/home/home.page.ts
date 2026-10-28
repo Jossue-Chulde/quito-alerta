@@ -39,19 +39,16 @@ export class HomePage implements ViewWillEnter {
     addIcons({ peopleOutline, checkmarkDoneOutline, timeOutline, warningOutline, bookmarkOutline, addCircleOutline });
   }
 
-  // Se ejecuta cada vez que entras a la pestaña de Inicio
   async ionViewWillEnter() {
     await this.cargarDatos();
   }
 
-  private async cargarDatos() {
+  async cargarDatos() {
     this.cargando = true;
     this.errorCarga = false;
 
-    // 1. Obtener el seguimiento local (es instantáneo)
     this.totalSeguimiento = await this.seguimientoService.contarSeguimiento();
 
-    // 2. Obtener el resumen de MockAPI
     this.resumenService.obtenerResumen().subscribe({
       next: (data) => {
         this.resumen = data;
@@ -59,17 +56,14 @@ export class HomePage implements ViewWillEnter {
       },
       error: (err) => {
         console.error('Error al cargar resumen:', err);
+        // Si falla, mostramos ceros para que no se rompa la pantalla
+        this.resumen = { total: 0, pendientes: 0, enProceso: 0, resueltas: 0, alta: 0, media: 0, baja: 0 };
         this.errorCarga = true;
         this.cargando = false;
       }
     });
   }
 
-  irARegistro() {
-    this.router.navigate(['/tabs/registro']);
-  }
-
-  irASeguimiento() {
-    this.router.navigate(['/tabs/seguimiento']);
-  }
+  irARegistro() { this.router.navigate(['/tabs/registro']); }
+  irASeguimiento() { this.router.navigate(['/tabs/seguimiento']); }
 }

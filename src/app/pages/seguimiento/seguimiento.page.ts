@@ -4,10 +4,10 @@ import { Router } from '@angular/router';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonList, 
   IonItem, IonLabel, IonThumbnail, IonBadge, IonSpinner, 
-  IonButton, IonIcon, ViewWillEnter 
+  IonButton, IonIcon, ViewWillEnter
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { bookmarkOutline, chevronForwardOutline, trashOutline, alertCircleOutline } from 'ionicons/icons';
+import { chevronForwardOutline, trashOutline, alertCircleOutline } from 'ionicons/icons';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -36,10 +36,9 @@ export class SeguimientoPage implements ViewWillEnter {
   errorCarga: boolean = false;
 
   constructor() {
-    addIcons({ bookmarkOutline, chevronForwardOutline, trashOutline, alertCircleOutline });
+    addIcons({ chevronForwardOutline, trashOutline, alertCircleOutline });
   }
 
-  // R1: Se ejecuta cada vez que entras a la pestaña
   async ionViewWillEnter() {
     await this.cargarSeguimiento();
   }
@@ -48,7 +47,6 @@ export class SeguimientoPage implements ViewWillEnter {
     this.cargando = true;
     this.errorCarga = false;
     
-    // 1. Obtener los códigos locales
     const codigos = await this.seguimientoService.obtenerCodigos();
     
     if (codigos.length === 0) {
@@ -57,35 +55,12 @@ export class SeguimientoPage implements ViewWillEnter {
       return;
     }
 
-    // 2. Hacer peticiones para cada código
-    // Nota: Si MockAPI soporta filtros (ej. ?codigo=INC-2026-0001), se podría optimizar.
-    // Por ahora, hacemos peticiones individuales usando el endpoint de listar con filtro.
-    const peticiones = codigos.map(codigo => 
-      this.incidenciaService.listar(1, 1).pipe(
-        // Esta es una simplificación. En un entorno real, buscaríamos por código.
-        // Como no tenemos un endpoint de búsqueda por código, filtraremos localmente.
-        catchError(() => of(null))
-      )
-    );
-
-    // Como MockAPI no filtra fácilmente por código desde un array, 
-    // la forma más limpia con nuestros endpoints actuales es:
-    // Hacer una petición por cada ID (pero no tenemos los IDs, solo los códigos).
-    
-    // SOLUCIÓN PARA ESTA DEMO: 
-    // Traer la primera página de incidencias (o pedir a MockAPI que filtre por código).
-    // MockAPI permite ?codigo=INC-2026-0001.
-    
-    // Vamos a usar un enfoque de petición por código:
     const requests = codigos.map(cod => 
-      this.incidenciaService.buscarPorCodigo(cod).pipe(
-        catchError(() => of(null))
-      )
+      this.incidenciaService.buscarPorCodigo(cod).pipe(catchError(() => of(null)))
     );
 
     forkJoin(requests).subscribe({
       next: (resultados) => {
-        // Filtrar los que fallaron o vinieron nulos
         this.incidencias = resultados.filter(r => r !== null) as Incidencia[];
         this.cargando = false;
       },
@@ -97,17 +72,14 @@ export class SeguimientoPage implements ViewWillEnter {
     });
   }
 
-  // R1: Desmarcar y quitar de la lista inmediatamente
   async desmarcar(incidencia: Incidencia, event: Event) {
-    event.stopPropagation(); // Evita que se abra el detalle al hacer clic en el botón
+    event.stopPropagation();
     await this.seguimientoService.desmarcar(incidencia.codigo);
     this.incidencias = this.incidencias.filter(i => i.codigo !== incidencia.codigo);
   }
 
   verDetalle(incidencia: Incidencia) {
-    if (incidencia.id) {
-      this.router.navigate(['/detalle', incidencia.id]);
-    }
+    if (incidencia.id) this.router.navigate(['/detalle', incidencia.id]);
   }
 
   getColorEstado(estado: string): string {

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { 
@@ -38,12 +38,9 @@ export class ListaPage implements ViewWillEnter {
     addIcons({ alertCircleOutline, chevronForwardOutline });
   }
 
-  // Se ejecuta cada vez que entramos a la pestaña
   ionViewWillEnter() {
-    // Si la lista está vacía, cargamos la primera página
-    if (this.incidencias.length === 0) {
-      this.cargarPrimeraPagina();
-    }
+    // Siempre recargamos al entrar para ver si hay nuevas
+    this.cargarPrimeraPagina();
   }
 
   cargarPrimeraPagina() {
@@ -55,10 +52,10 @@ export class ListaPage implements ViewWillEnter {
 
     this.incidenciaService.listar(this.page).subscribe({
       next: (res) => {
-        // Extraemos el cuerpo de la respuesta
+        // Extraemos el cuerpo del arreglo
         this.incidencias = res.body || [];
         
-        // Si trajo menos elementos de los que pedimos (10), es porque ya no hay más páginas
+        // Si la longitud es menor al límite de página (10), ya no hay más
         if (this.incidencias.length < 10) {
           this.hasMore = false;
         }
@@ -73,7 +70,6 @@ export class ListaPage implements ViewWillEnter {
     });
   }
 
-  // R3: Carga progresiva
   cargarMasDatos(event: InfiniteScrollCustomEvent) {
     if (!this.hasMore) {
       event.target.complete();

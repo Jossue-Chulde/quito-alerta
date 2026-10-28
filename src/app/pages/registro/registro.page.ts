@@ -9,6 +9,7 @@ import { IncidenciaService } from '../../services/incidencia.service';
 import { ClimaService } from '../../services/clima.service';
 import { FotoService } from '../../services/foto.service';
 import { BorradorService } from '../../services/borrador.service';
+import { ResumenService } from '../../services/resumen.service';
 import { Incidencia, TipoIncidencia } from '../../models/incidencia.model';
 import { Clima } from '../../models/clima.model';
 import { 
@@ -24,12 +25,10 @@ import {
   styleUrls: ['./registro.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, 
-    ReactiveFormsModule,
-    IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, 
-    IonSelect, IonSelectOption, IonTextarea, IonInput, IonCard, 
-    IonCardHeader, IonCardTitle, IonCardSubtitle, IonCardContent, 
-    IonSpinner, IonButton, IonIcon, IonText
+    CommonModule, ReactiveFormsModule, IonHeader, IonToolbar, IonTitle, 
+    IonContent, IonList, IonItem, IonSelect, IonSelectOption, IonTextarea, 
+    IonInput, IonCard, IonCardHeader, IonCardTitle, IonCardSubtitle, 
+    IonCardContent, IonSpinner, IonButton, IonIcon, IonText
   ]
 })
 export class RegistroPage implements OnInit {
@@ -39,6 +38,7 @@ export class RegistroPage implements OnInit {
   private climaService = inject(ClimaService);
   private fotoService = inject(FotoService);
   private borradorService = inject(BorradorService);
+  private resumenService = inject(ResumenService); // Inyectado para actualizar los contadores
   private alertCtrl = inject(AlertController);
   private toastCtrl = inject(ToastController);
 
@@ -78,12 +78,8 @@ export class RegistroPage implements OnInit {
     const lat = group.get('latitud')?.value;
     const lng = group.get('longitud')?.value;
 
-    if (prioridad === 'alta' && !this.fotoUrlCloudinary) {
-      return { fotoRequerida: true };
-    }
-    if (tipo === 'bache' && (!lat || !lng)) {
-      return { ubicacionRequerida: true };
-    }
+    if (prioridad === 'alta' && !this.fotoUrlCloudinary) return { fotoRequerida: true };
+    if (tipo === 'bache' && (!lat || !lng)) return { ubicacionRequerida: true };
     return null;
   }
 
@@ -94,20 +90,14 @@ export class RegistroPage implements OnInit {
         header: 'Borrador encontrado',
         message: `Tienes un registro sin terminar de ${new Date(borrador.guardadoEn).toLocaleString()}. ¿Deseas continuarlo?`,
         buttons: [
-          {
-            text: 'Descartar',
-            role: 'cancel',
-            handler: () => this.borradorService.limpiarBorrador()
-          },
+          { text: 'Descartar', role: 'cancel', handler: () => this.borradorService.limpiarBorrador() },
           {
             text: 'Continuar',
             handler: () => {
               this.formulario.patchValue(borrador);
               this.fotoUrlCloudinary = borrador.fotoUrl;
               this.formulario.updateValueAndValidity();
-              if (!this.fotoUrlCloudinary) {
-                this.mostrarToast('La fotografía anterior no se pudo recuperar. Debes tomar una nueva.');
-              }
+              if (!this.fotoUrlCloudinary) this.mostrarToast('La fotografía anterior no se pudo recuperar. Debes tomar una nueva.');
             }
           }
         ]
@@ -118,10 +108,7 @@ export class RegistroPage implements OnInit {
 
   private configurarAutoGuardado() {
     this.formulario.valueChanges.subscribe(val => {
-      this.borradorService.guardarBorrador({
-        ...val,
-        fotoUrl: this.fotoUrlCloudinary
-      });
+      this.borradorService.guardarBorrador({ ...val, fotoUrl: this.fotoUrlCloudinary });
     });
   }
 
@@ -130,10 +117,8 @@ export class RegistroPage implements OnInit {
       const path = await this.fotoService.capturarFoto();
       this.fotoLocalPath = path;
       this.subiendoFoto = true;
-      
       const url = await this.fotoService.subirFoto(path);
       this.fotoUrlCloudinary = url;
-      
       this.formulario.updateValueAndValidity();
       this.mostrarToast('Foto subida correctamente');
     } catch (error: any) {
@@ -146,10 +131,7 @@ export class RegistroPage implements OnInit {
   async obtenerUbicacion() {
     try {
       const coordinates = await Geolocation.getCurrentPosition();
-      this.formulario.patchValue({
-        latitud: coordinates.coords.latitude,
-        longitud: coordinates.coords.longitude
-      });
+      this.formulario.patchValue({ latitud: coordinates.coords.latitude, longitud: coordinates.coords.longitude });
       this.mostrarToast('Ubicación obtenida');
       this.consultarClima(coordinates.coords.latitude, coordinates.coords.longitude);
     } catch (error) {
@@ -162,23 +144,17 @@ export class RegistroPage implements OnInit {
     this.cargandoClima = true;
     this.errorClima = null;
     this.climaActual = null;
-
     this.climaService.obtenerClima(lat, lon).subscribe(res => {
       this.cargandoClima = false;
-      if (res.ok) {
-        this.climaActual = res.data;
-      } else {
-        this.errorClima = res.mensaje;
-      }
+      if (res.ok) this.climaActual = res.data;
+      else this.errorClima = res.mensaje;
     });
   }
 
   consultarClimaManual() {
     const lat = this.formulario.get('latitud')?.value;
     const lon = this.formulario.get('longitud')?.value;
-    if (lat && lon) {
-      this.consultarClima(lat, lon);
-    }
+    if (lat && lon) this.consultarClima(lat, lon);
   }
 
   async guardar() {
@@ -193,11 +169,9 @@ export class RegistroPage implements OnInit {
     const anio = new Date().getFullYear();
     const correlativo = Math.floor(Math.random() * 9000) + 1000;
     const codigo = `INC-${anio}-${correlativo}`;
-
     const latVal = this.formulario.value.latitud;
     const lonVal = this.formulario.value.longitud;
 
-    // Construimos el objeto asegurando los tipos de datos de tu nuevo esquema
     const nuevaIncidencia: any = {
       codigo: codigo,
       tipo: this.formulario.value.tipo,
@@ -213,10 +187,22 @@ export class RegistroPage implements OnInit {
       observacionResolucion: "" 
     };
 
-    console.log('Enviando a MockAPI:', JSON.stringify(nuevaIncidencia));
-
     this.incidenciaService.crear(nuevaIncidencia).subscribe({
       next: async () => {
+        // Actualizamos el endpoint de resumen
+        this.resumenService.obtenerResumen().subscribe(res => {
+          if (res && res.id) {
+            const actualizado = {
+              total: res.total + 1,
+              pendientes: res.pendientes + 1,
+              alta: nuevaIncidencia.prioridad === 'alta' ? res.alta + 1 : res.alta,
+              media: nuevaIncidencia.prioridad === 'media' ? res.media + 1 : res.media,
+              baja: nuevaIncidencia.prioridad === 'baja' ? res.baja + 1 : res.baja
+            };
+            this.resumenService.actualizarResumen(res.id, actualizado).subscribe();
+          }
+        });
+
         await this.borradorService.limpiarBorrador();
         this.mostrarToast('Incidencia registrada exitosamente');
         this.formulario.reset({ prioridad: 'media' });
@@ -226,20 +212,14 @@ export class RegistroPage implements OnInit {
         this.router.navigate(['/tabs/incidencias']);
       },
       error: (err) => {
-        console.error('Error detallado de MockAPI -> Status:', err.status);
-        console.error('Error detallado de MockAPI -> Respuesta:', JSON.stringify(err.error));
-        this.mostrarToast('Error al guardar. Revisa la consola.');
+        console.error(err);
+        this.mostrarToast('Error al guardar.');
       }
     });
   }
 
   private async mostrarToast(msg: string) {
-    const toast = await this.toastCtrl.create({
-      message: msg,
-      duration: 3000,
-      position: 'bottom',
-      color: 'dark'
-    });
+    const toast = await this.toastCtrl.create({ message: msg, duration: 3000, position: 'bottom', color: 'dark' });
     await toast.present();
   }
 }
