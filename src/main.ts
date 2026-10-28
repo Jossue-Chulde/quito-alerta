@@ -1,14 +1,24 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { RouteReuseStrategy, provideRouter, withComponentInputBinding, withPreloading, PreloadAllModules } from '@angular/router';
-import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular';
+import { provideRouter, withComponentInputBinding, RouteReuseStrategy } from '@angular/router';
+import { provideIonicAngular, IonicRouteStrategy } from '@ionic/angular';
+import { provideHttpClient } from '@angular/common/http';
+import { LOCALE_ID } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeEsEc from '@angular/common/locales/es-EC';
 
-import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
+import { routes } from './app/app.routes';
+
+// Registramos el idioma español de Ecuador
+registerLocaleData(localeEsEc);
 
 bootstrapApplication(AppComponent, {
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-    provideIonicAngular(),
-    provideRouter(routes, withPreloading(PreloadAllModules), withComponentInputBinding()),
+    provideIonicAngular({ mode: 'md' }),
+    provideRouter(routes, withComponentInputBinding()),
+    provideHttpClient(),
+    { provide: LOCALE_ID, useValue: 'es-EC' }
   ],
-});
+})
+.catch(err => console.error(err));
