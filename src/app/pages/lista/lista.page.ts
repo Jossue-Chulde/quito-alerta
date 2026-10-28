@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { 
@@ -27,6 +27,7 @@ import { Incidencia } from '../../models/incidencia.model';
 export class ListaPage implements ViewWillEnter {
   private incidenciaService = inject(IncidenciaService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef); 
 
   incidencias: Incidencia[] = [];
   page: number = 1;
@@ -39,7 +40,6 @@ export class ListaPage implements ViewWillEnter {
   }
 
   ionViewWillEnter() {
-    // Siempre recargamos al entrar para ver si hay nuevas
     this.cargarPrimeraPagina();
   }
 
@@ -51,21 +51,19 @@ export class ListaPage implements ViewWillEnter {
     this.errorCarga = false;
 
     this.incidenciaService.listar(this.page).subscribe({
-      next: (res) => {
-        // Extraemos el cuerpo del arreglo
-        this.incidencias = res.body || [];
-        
-        // Si la longitud es menor al límite de página (10), ya no hay más
-        if (this.incidencias.length < 10) {
-          this.hasMore = false;
-        }
-        
+      next: (data) => {
+        this.incidencias = data;
+        if (this.incidencias.length < 10) this.hasMore = false;
         this.cargando = false;
+        
+        // FORZAMOS A ANGULAR A ACTUALIZAR LA PANTALLA
+        this.cdr.detectChanges(); 
       },
       error: (err) => {
         console.error('Error al cargar lista:', err);
         this.errorCarga = true;
         this.cargando = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -78,14 +76,9 @@ export class ListaPage implements ViewWillEnter {
 
     this.page++;
     this.incidenciaService.listar(this.page).subscribe({
-      next: (res) => {
-        const nuevas = res.body || [];
+      next: (nuevas) => {
         this.incidencias = [...this.incidencias, ...nuevas];
-        
-        if (nuevas.length < 10) {
-          this.hasMore = false;
-        }
-        
+        if (nuevas.length < 10) this.hasMore = false;
         event.target.complete();
       },
       error: (err) => {
@@ -97,8 +90,10 @@ export class ListaPage implements ViewWillEnter {
   }
 
   verDetalle(incidencia: Incidencia) {
-    if (incidencia.id) {
-      this.router.navigate(['/detalle', incidencia.id]);
+    // Si no hay ID, usamos el código como respaldo
+    const idParaNavegar = incidencia.id || incidencia.codigo;
+    if (idParaNavegar) {
+      this.router.navigate(['/detalle', idParaNavegar]);
     }
   }
 

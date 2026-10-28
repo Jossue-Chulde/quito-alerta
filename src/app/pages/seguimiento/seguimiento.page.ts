@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { 
@@ -30,6 +30,7 @@ export class SeguimientoPage implements ViewWillEnter {
   private incidenciaService = inject(IncidenciaService);
   private seguimientoService = inject(SeguimientoService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   incidencias: Incidencia[] = [];
   cargando: boolean = false;
@@ -52,6 +53,7 @@ export class SeguimientoPage implements ViewWillEnter {
     if (codigos.length === 0) {
       this.incidencias = [];
       this.cargando = false;
+      this.cdr.detectChanges();
       return;
     }
 
@@ -63,11 +65,13 @@ export class SeguimientoPage implements ViewWillEnter {
       next: (resultados) => {
         this.incidencias = resultados.filter(r => r !== null) as Incidencia[];
         this.cargando = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al cargar seguimiento:', err);
         this.errorCarga = true;
         this.cargando = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -76,10 +80,13 @@ export class SeguimientoPage implements ViewWillEnter {
     event.stopPropagation();
     await this.seguimientoService.desmarcar(incidencia.codigo);
     this.incidencias = this.incidencias.filter(i => i.codigo !== incidencia.codigo);
+    this.cdr.detectChanges(); // Forzar a que desaparezca de la vista
   }
 
   verDetalle(incidencia: Incidencia) {
-    if (incidencia.id) this.router.navigate(['/detalle', incidencia.id]);
+    // Usamos el código porque los datos de prueba no tienen id
+    const idParaNavegar = incidencia.id || incidencia.codigo;
+    this.router.navigate(['/detalle', idParaNavegar]);
   }
 
   getColorEstado(estado: string): string {

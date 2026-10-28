@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { 
@@ -35,6 +35,7 @@ export class DetallePage implements OnInit {
   private resumenService = inject(ResumenService);
   private alertCtrl = inject(AlertController);
   private toastCtrl = inject(ToastController);
+  private cdr = inject(ChangeDetectorRef);
 
   incidencia: Incidencia | null = null;
   cargando = true;
@@ -47,28 +48,42 @@ export class DetallePage implements OnInit {
 
   async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id) this.cargarIncidencia(id);
-    else { this.errorCarga = true; this.cargando = false; }
+    if (id) {
+      this.cargarIncidencia(id);
+    } else {
+      this.errorCarga = true;
+      this.cargando = false;
+    }
   }
 
   private cargarIncidencia(id: string) {
     this.cargando = true;
-    this.incidenciaService.obtenerPorId(id).subscribe({
+    
+    // Si el ID es un código (ej. INC-2026-0001), usamos buscarPorCodigo, si no, obtenerPorId
+    const peticion = id.startsWith('INC-') 
+      ? this.incidenciaService.buscarPorCodigo(id) 
+      : this.incidenciaService.obtenerPorId(id);
+
+    peticion.subscribe({
       next: async (data) => {
         this.incidencia = data;
+        // Verificamos si está en seguimiento local
         this.enSeguimiento = await this.seguimientoService.estaEnSeguimiento(data.codigo);
         this.cargando = false;
+        this.cdr.detectChanges(); // Forzar actualización visual
       },
       error: (err) => {
-        console.error(err);
+        console.error('Error al cargar detalle:', err);
         this.errorCarga = true;
         this.cargando = false;
+        this.cdr.detectChanges();
       }
     });
   }
 
   async toggleSeguimiento() {
     if (!this.incidencia) return;
+    
     if (this.enSeguimiento) {
       await this.seguimientoService.desmarcar(this.incidencia.codigo);
       this.enSeguimiento = false;
@@ -78,10 +93,12 @@ export class DetallePage implements OnInit {
       this.enSeguimiento = true;
       this.mostrarToast('Añadido a seguimiento');
     }
+    this.cdr.detectChanges(); // Actualizar el icono del bookmark
   }
 
   async cambiarEstado(nuevoEstado: EstadoIncidencia) {
     if (!this.incidencia) return;
+
     if (!this.incidenciaService.esTransicionValida(this.incidencia.estado, nuevoEstado)) {
       this.mostrarToast('Transición de estado no permitida.');
       return;
@@ -116,7 +133,6 @@ export class DetallePage implements OnInit {
   private ejecutarCambioEstado(nuevoEstado: EstadoIncidencia, observacion: string | null) {
     if (!this.incidencia?.id) return;
     const estadoAnterior = this.incidencia.estado;
-
     const cambios: Partial<Incidencia> = { estado: nuevoEstado };
     if (observacion) cambios.observacionResolucion = observacion;
 
@@ -124,7 +140,7 @@ export class DetallePage implements OnInit {
       next: (data) => {
         this.incidencia = data;
         
-        // Actualizamos el resumen
+        // Actualizamos los contadores en el resumen
         this.resumenService.obtenerResumen().subscribe(res => {
           if (res && res.id) {
             const act = { ...res };
@@ -133,11 +149,13 @@ export class DetallePage implements OnInit {
             
             if (nuevoEstado === 'en_proceso') act.enProceso += 1;
             if (nuevoEstado === 'resuelta') act.resueltas += 1;
-
+            
             this.resumenService.actualizarResumen(res.id, act).subscribe();
           }
         });
+
         this.mostrarToast('Estado actualizado correctamente');
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error(err);
