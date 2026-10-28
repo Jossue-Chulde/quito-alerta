@@ -1,13 +1,68 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>seguimiento</ion-title>
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Mi Seguimiento</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">seguimiento</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content>
+  
+  @if (cargando) {
+    <div class="ion-text-center ion-padding">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Cargando seguimiento...</p>
+    </div>
+  }
+
+  @if (errorCarga) {
+    <div class="ion-text-center ion-padding">
+      <ion-icon name="alert-circle-outline" color="danger" size="large"></ion-icon>
+      <p>No se pudieron cargar los datos. Revisa tu conexión.</p>
+      <ion-button expand="block" (click)="cargarSeguimiento()">Reintentar</ion-button>
+    </div>
+  }
+
+  <!-- Estado vacío (R1) -->
+  @if (!cargando && !errorCarga && incidencias.length === 0) {
+    <div class="ion-text-center ion-padding empty-state">
+      <ion-icon name="bookmark-outline" color="medium" size="large"></ion-icon>
+      <h3>No tienes incidencias en seguimiento</h3>
+      <p>Marca el ícono de marcador en los detalles de una incidencia para verla aquí.</p>
+    </div>
+  }
+
+  <!-- Listado -->
+  @if (incidencias.length > 0) {
+    <ion-list lines="none" class="ion-padding">
+      @for (item of incidencias; track item.id) {
+        <ion-item button (click)="verDetalle(item)" class="incidencia-card ion-margin-bottom">
+          
+          @if (item.fotoUrl) {
+            <ion-thumbnail slot="start">
+              <img [src]="item.fotoUrl" alt="Foto incidencia">
+            </ion-thumbnail>
+          } @else {
+            <ion-thumbnail slot="start" class="no-foto">
+              <ion-icon name="alert-circle-outline" color="medium"></ion-icon>
+            </ion-thumbnail>
+          }
+
+          <ion-label class="ion-text-wrap">
+            <h2>{{ item.tipo | titlecase }} <span class="codigo">{{ item.codigo }}</span></h2>
+            <p>{{ item.descripcion }}</p>
+            
+            <div class="badges">
+              <ion-badge [color]="getColorEstado(item.estado)">{{ item.estado | titlecase }}</ion-badge>
+              <ion-badge [color]="getColorPrioridad(item.prioridad)">{{ item.prioridad | titlecase }}</ion-badge>
+            </div>
+          </ion-label>
+
+          <!-- Botón de desmarcar -->
+          <ion-button slot="end" fill="clear" color="danger" (click)="desmarcar(item, $event)">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+      }
+    </ion-list>
+  }
+
 </ion-content>

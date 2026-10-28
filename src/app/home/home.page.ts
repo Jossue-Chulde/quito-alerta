@@ -1,12 +1,75 @@
-import { Component } from '@angular/core';
-import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { 
+  IonHeader, IonToolbar, IonTitle, IonContent, IonCard, 
+  IonCardHeader, IonCardTitle, IonCardContent, IonGrid, 
+  IonRow, IonCol, IonButton, IonIcon, IonSpinner, IonText
+} from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { peopleOutline, checkmarkDoneOutline, timeOutline, warningOutline, bookmarkOutline, addCircleOutline } from 'ionicons/icons';
+import { ViewWillEnter } from '@ionic/angular';
+
+import { ResumenService } from '../services/resumen.service';
+import { SeguimientoService } from '../services/seguimiento.service';
+import { ResumenIndicadores } from '../models/incidencia.model';
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent],
+  standalone: true,
+  imports: [
+    CommonModule, IonHeader, IonToolbar, IonTitle, IonContent, 
+    IonCard, IonCardHeader, IonCardTitle, IonCardContent, 
+    IonGrid, IonRow, IonCol, IonButton, IonIcon, IonSpinner, IonText
+  ]
 })
-export class HomePage {
-  constructor() {}
+export class HomePage implements ViewWillEnter {
+  private resumenService = inject(ResumenService);
+  private seguimientoService = inject(SeguimientoService);
+  private router = inject(Router);
+
+  resumen: ResumenIndicadores | null = null;
+  totalSeguimiento: number = 0;
+  cargando: boolean = true;
+  errorCarga: boolean = false;
+
+  constructor() {
+    addIcons({ peopleOutline, checkmarkDoneOutline, timeOutline, warningOutline, bookmarkOutline, addCircleOutline });
+  }
+
+  // Se ejecuta cada vez que entras a la pestaña de Inicio
+  async ionViewWillEnter() {
+    await this.cargarDatos();
+  }
+
+  private async cargarDatos() {
+    this.cargando = true;
+    this.errorCarga = false;
+
+    // 1. Obtener el seguimiento local (es instantáneo)
+    this.totalSeguimiento = await this.seguimientoService.contarSeguimiento();
+
+    // 2. Obtener el resumen de MockAPI
+    this.resumenService.obtenerResumen().subscribe({
+      next: (data) => {
+        this.resumen = data;
+        this.cargando = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar resumen:', err);
+        this.errorCarga = true;
+        this.cargando = false;
+      }
+    });
+  }
+
+  irARegistro() {
+    this.router.navigate(['/tabs/registro']);
+  }
+
+  irASeguimiento() {
+    this.router.navigate(['/tabs/seguimiento']);
+  }
 }

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Incidencia, EstadoIncidencia } from '../models/incidencia.model';
 
@@ -33,6 +33,22 @@ export class IncidenciaService {
   }
 
   /**
+   * Busca una incidencia por su código (ej. INC-2026-0001).
+   * MockAPI soporta filtrar usando query params.
+   */
+  buscarPorCodigo(codigo: string): Observable<Incidencia> {
+    const params = new HttpParams().set('codigo', codigo);
+    return this.http.get<Incidencia[]>(this.baseUrl, { params }).pipe(
+      map(res => {
+        if (res && res.length > 0) {
+          return res[0];
+        }
+        throw new Error('Incidencia no encontrada');
+      })
+    );
+  }
+
+  /**
    * R5: Crear incidencia.
    */
   crear(incidencia: Partial<Incidencia>): Observable<Incidencia> {
@@ -60,4 +76,5 @@ export class IncidenciaService {
     if (actual === 'en_proceso' && nuevo === 'resuelta') return true;
     return false;
   }
+
 }

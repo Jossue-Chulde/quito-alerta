@@ -1,13 +1,157 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>registro</ion-title>
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Nueva Incidencia</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">registro</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding">
+  <form [formGroup]="formulario" (ngSubmit)="guardar()">
+    
+    <ion-list>
+      <!-- Tipo -->
+      <ion-item>
+        <ion-select formControlName="tipo" label="Tipo de incidencia" placeholder="Seleccione">
+          @for (t of tipos; track t) {
+            <ion-select-option [value]="t">{{ t | titlecase }}</ion-select-option>
+          }
+        </ion-select>
+      </ion-item>
+
+      <!-- Descripción -->
+      <ion-item>
+        <ion-textarea formControlName="descripcion" label="Descripción" placeholder="Detalle el problema..." rows="3"></ion-textarea>
+      </ion-item>
+
+      <!-- Dirección y Sector -->
+      <ion-item>
+        <ion-input formControlName="direccion" label="Dirección" placeholder="Ej. Av. Amazonas y Colón"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input formControlName="sector" label="Sector" placeholder="Ej. Centro Histórico"></ion-input>
+      </ion-item>
+
+      <!-- Prioridad -->
+      <ion-item>
+        <ion-select formControlName="prioridad" label="Prioridad">
+          @for (p of prioridades; track p) {
+            <ion-select-option [value]="p">{{ p | titlecase }}</ion-select-option>
+          }
+        </ion-select>
+      </ion-item>
+    </ion-list>
+
+    <!-- Bloque de Foto (R5 y R6) -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Evidencia Fotográfica</ion-card-title>
+        @if (formulario.value.prioridad === 'alta') {
+          <ion-card-subtitle color="danger">
+            Obligatoria para prioridad alta
+          </ion-card-subtitle>
+        }
+      </ion-card-header>
+      <ion-card-content class="ion-text-center">
+        @if (subiendoFoto) {
+          <ion-spinner name="crescent"></ion-spinner>
+        }
+        
+        @if (fotoUrlCloudinary && !subiendoFoto) {
+          <div>
+            <img [src]="fotoUrlCloudinary" alt="Evidencia" style="max-height: 200px; border-radius: 8px;">
+          </div>
+        }
+        
+        <ion-button expand="block" fill="outline" (click)="tomarFoto()" [disabled]="subiendoFoto">
+          <ion-icon slot="start" name="camera-outline"></ion-icon>
+          {{ fotoUrlCloudinary ? 'Retomar Foto' : 'Tomar Foto' }}
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Bloque de Ubicación (R7) -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Ubicación</ion-card-title>
+        @if (formulario.value.tipo === 'bache') {
+          <ion-card-subtitle color="danger">
+            Obligatoria para baches
+          </ion-card-subtitle>
+        }
+      </ion-card-header>
+      <ion-card-content>
+        <ion-button expand="block" fill="outline" (click)="obtenerUbicacion()">
+          <ion-icon slot="start" name="location-outline"></ion-icon>
+          Obtener GPS
+        </ion-button>
+        
+        <ion-item>
+          <ion-input type="number" formControlName="latitud" label="Latitud" placeholder="Ej. -0.1807"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input type="number" formControlName="longitud" label="Longitud" placeholder="Ej. -78.4678"></ion-input>
+        </ion-item>
+        <ion-button expand="block" fill="clear" size="small" (click)="consultarClimaManual()">
+          Consultar clima con estas coordenadas
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Bloque de Clima (R4) -->
+    @if (cargandoClima || climaActual || errorClima) {
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Clima en la ubicación</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          @if (cargandoClima) {
+            <ion-spinner name="dots"></ion-spinner>
+          }
+          
+          <!-- Aquí aplicamos la aserción no nula (climaActual!) para evitar el TS2531 -->
+          @if (climaActual) {
+            <div>
+              <p><strong>Temperatura:</strong> {{ climaActual.temperatura }} °C</p>
+              <p><strong>Condición:</strong> {{ climaActual.condicion }}</p>
+              <p><strong>Precipitación (última hora):</strong> {{ climaActual.precipitacionUltimaHora }} mm</p>
+              
+              @if (climaActual.advertenciaLluvia) {
+                <ion-item color="warning" lines="none">
+                  <ion-icon slot="start" name="warning-outline"></ion-icon>
+                  <ion-text class="ion-text-wrap">
+                    Las condiciones podrían dificultar el mantenimiento.
+                  </ion-text>
+                </ion-item>
+              }
+            </div>
+          }
+          
+          @if (errorClima) {
+            <div>
+              <ion-text color="danger">{{ errorClima }}</ion-text>
+            </div>
+          }
+        </ion-card-content>
+      </ion-card>
+    }
+
+    <!-- Botón Guardar -->
+    <ion-button expand="block" type="submit" color="primary" class="ion-margin-top" 
+                [disabled]="formulario.invalid || subiendoFoto">
+      <ion-icon slot="start" name="save-outline"></ion-icon>
+      Guardar Incidencia
+    </ion-button>
+    
+    @if (formulario.errors?.['fotoRequerida']) {
+      <div class="ion-text-center ion-padding">
+        <ion-text color="danger">Debes tomar una foto para prioridad alta.</ion-text>
+      </div>
+    }
+    
+    @if (formulario.errors?.['ubicacionRequerida']) {
+      <div class="ion-text-center ion-padding">
+        <ion-text color="danger">Debes ingresar coordenadas para un bache.</ion-text>
+      </div>
+    }
+
+  </form>
 </ion-content>

@@ -1,0 +1,72 @@
+ion-list {
+  background: transparent;
+}
+
+.incidencia-card {
+  --background: var(--ion-color-light);
+  --padding-start: 12px;
+  --inner-padding-end: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  margin-bottom: 12px;
+
+  ion-thumbnail {
+    --size: 60px;
+    --border-radius: 8px;
+    margin-right: 12px;
+    
+    img {
+      object-fit: cover;
+    }
+  }
+
+  .no-foto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e5e7eb;
+    border-radius: 8px;
+    
+    ion-icon {
+      font-size: 24px;
+    }
+  }
+
+  h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    
+    .codigo {
+      font-size: 0.75rem;
+      color: var(--ion-color-medium);
+      font-weight: normal;
+    }
+  }
+
+  p {
+    font-size: 0.85rem;
+    color: var(--ion-color-medium);
+    margin: 2px 0;
+  }
+
+  .fecha {
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+  }
+
+  .badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+
+    ion-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+  }
+}

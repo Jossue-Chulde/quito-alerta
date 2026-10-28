@@ -1,20 +1,119 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Inicio</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding">
+  
+  @if (cargando) {
+    <div class="ion-text-center ion-padding">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Cargando indicadores...</p>
+    </div>
+  }
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-  </div>
+  @if (errorCarga) {
+    <ion-card color="danger">
+      <ion-card-content class="ion-text-center">
+        <ion-text color="light">No se pudieron cargar los indicadores.</ion-text>
+        <ion-button expand="block" fill="clear" color="light" (click)="cargarDatos()">Reintentar</ion-button>
+      </ion-card-content>
+    </ion-card>
+  }
+
+  @if (!cargando && resumen) {
+    <!-- Tarjeta de Total -->
+    <ion-card color="primary">
+      <ion-card-header class="ion-text-center">
+        <ion-card-title>Total de Incidencias</ion-card-title>
+      </ion-card-header>
+      <ion-card-content class="ion-text-center">
+        <h1 style="font-size: 3rem; margin: 0; font-weight: bold;">{{ resumen.total }}</h1>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Tarjetas por Estado -->
+    <h2 class="ion-padding-start ion-margin-top">Por Estado</h2>
+    <ion-grid>
+      <ion-row>
+        <ion-col size="4">
+          <ion-card class="stat-card pendiente">
+            <ion-card-content class="ion-text-center">
+              <ion-icon name="time-outline" size="large"></ion-icon>
+              <h2>{{ resumen.pendientes }}</h2>
+              <p>Pendientes</p>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+        <ion-col size="4">
+          <ion-card class="stat-card en-proceso">
+            <ion-card-content class="ion-text-center">
+              <ion-icon name="warning-outline" size="large"></ion-icon>
+              <h2>{{ resumen.enProceso }}</h2>
+              <p>En Proceso</p>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+        <ion-col size="4">
+          <ion-card class="stat-card resuelta">
+            <ion-card-content class="ion-text-center">
+              <ion-icon name="checkmark-done-outline" size="large"></ion-icon>
+              <h2>{{ resumen.resueltas }}</h2>
+              <p>Resueltas</p>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Tarjetas por Prioridad -->
+    <h2 class="ion-padding-start">Por Prioridad</h2>
+    <ion-grid>
+      <ion-row>
+        <ion-col size="4">
+          <ion-card class="stat-card prioridad-alta">
+            <ion-card-content class="ion-text-center">
+              <h2>{{ resumen.alta }}</h2>
+              <p>Alta</p>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+        <ion-col size="4">
+          <ion-card class="stat-card prioridad-media">
+            <ion-card-content class="ion-text-center">
+              <h2>{{ resumen.media }}</h2>
+              <p>Media</p>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+        <ion-col size="4">
+          <ion-card class="stat-card prioridad-baja">
+            <ion-card-content class="ion-text-center">
+              <h2>{{ resumen.baja }}</h2>
+              <p>Baja</p>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Tarjeta de Seguimiento Local (R1) -->
+    <ion-card color="tertiary" class="ion-margin-top">
+      <ion-card-content class="ion-text-center">
+        <ion-icon name="bookmark-outline" size="large"></ion-icon>
+        <h2>En seguimiento: {{ totalSeguimiento }}</h2>
+        <ion-button expand="block" fill="outline" color="light" (click)="irASeguimiento()">
+          Ver mis seguimientos
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  }
+
+  <!-- Botón de acceso rápido a Nueva Incidencia -->
+  <ion-button expand="block" color="success" class="ion-margin-top" (click)="irARegistro()">
+    <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+    Registrar Nueva Incidencia
+  </ion-button>
+
 </ion-content>
