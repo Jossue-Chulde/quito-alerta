@@ -29,19 +29,14 @@ export class FotoService {
         correctOrientation: true
       });
 
-      // En la web, el plugin devuelve webPath. En Android, devuelve path.
       if (Capacitor.getPlatform() === 'web') {
-        if (!photo.webPath) {
-          throw new Error('No se obtuvo la ruta web de la imagen.');
-        }
-        // Convertimos la URL webPath a un Blob para subirlo a Cloudinary
+        if (!photo.webPath) throw new Error('No se obtuvo la ruta web.');
+        // Convertimos a Blob para la subida en web
         const response = await fetch(photo.webPath);
         const blob = await response.blob();
         return { webPath: photo.webPath, blob };
       } else {
-        if (!photo.path) {
-          throw new Error('No se obtuvo la ruta de la imagen.');
-        }
+        if (!photo.path) throw new Error('No se obtuvo la ruta nativa.');
         return { path: photo.path };
       }
     } catch (error) {
@@ -51,41 +46,65 @@ export class FotoService {
   }
 
   async subirFoto(data: { path?: string; blob?: Blob }): Promise<string> {
+    if (Capacitor.getPlatform() === 'web') {
+      return this.subirFotoWeb(data.blob!);
+    } else {
+      return this.subirFotoAndroid(data.path!);
+    }
+  }
+
+  // MÉTODO PARA WEB: Usa fetch con FormData (Evita el 401 del plugin)
+  private async subirFotoWeb(blob: Blob): Promise<string> {
+    const formData = new FormData();
+    formData.append('file', blob);
+    formData.append('upload_preset', environment.cloudinary.uploadPreset);
+    
+    const url = `https://api.cloudinary.com/v1_1/${environment.cloudinary.cloudName}/image/upload`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('Error detallado de Cloudinary (Web):', result);
+        throw new Error(result.error?.message || 'Error al subir imagen.');
+      }
+      
+      return result.secure_url;
+    } catch (error) {
+      console.error('Error de red en Cloudinary Web:', error);
+      throw new Error('No se pudo subir la imagen. Revisa tu conexión.');
+    }
+  }
+
+  // MÉTODO PARA ANDROID: Usa el plugin nativo con path
+  private async subirFotoAndroid(path: string): Promise<string> {
     try {
       await this.initCloudinary();
-
-      if (Capacitor.getPlatform() === 'web') {
-        // En la web, subimos el Blob
-        const result = await Cloudinary.uploadResource({
-          blob: data.blob!,
-          resourceType: ResourceType.Image,
-          uploadPreset: environment.cloudinary.uploadPreset,
-          publicId: `incidencia_${Date.now()}`
-        });
-        if (!result || !result.secureUrl) {
-          throw new Error('Cloudinary no devolvió una URL válida.');
-        }
-        return result.secureUrl;
-      } else {
-        // En Android, limpiamos la ruta y subimos el archivo
-        let cleanPath = data.path!;
-        if (cleanPath.startsWith('file://')) {
-          cleanPath = cleanPath.substring(7);
-        }
-        const result = await Cloudinary.uploadResource({
-          path: cleanPath,
-          resourceType: ResourceType.Image,
-          uploadPreset: environment.cloudinary.uploadPreset,
-          publicId: `incidencia_${Date.now()}`
-        });
-        if (!result || !result.secureUrl) {
-          throw new Error('Cloudinary no devolvió una URL válida.');
-        }
-        return result.secureUrl;
+      
+      let cleanPath = path;
+      if (cleanPath.startsWith('file://')) {
+        cleanPath = cleanPath.substring(7);
       }
+
+      const result = await Cloudinary.uploadResource({
+        path: cleanPath,
+        resourceType: ResourceType.Image,
+        uploadPreset: environment.cloudinary.uploadPreset,
+        publicId: `incidencia_${Date.now()}`
+      });
+
+      if (!result || !result.secureUrl) {
+        throw new Error('Cloudinary no devolvió una URL válida.');
+      }
+      return result.secureUrl;
     } catch (error: any) {
-      console.error('Error detallado de Cloudinary:', JSON.stringify(error));
-      throw new Error('No se pudo subir la imagen. Intenta de nuevo.');
+      console.error('Error detallado de Cloudinary (Android):', JSON.stringify(error));
+      throw new Error('No se pudo subir la imagen en Android. Revisa la consola.');
     }
   }
 }
